@@ -1,0 +1,107 @@
+//Program:文章生成器
+//Date:3/2022
+//Author:HHH
+#include<iostream>
+#include<cstring>
+#include<cwchar>
+#include<locale>
+#include<cstdlib>
+#include<windows.h>
+#pragma warning(disable:4996)
+using namespace std;
+wchar_t list[1200000];//list是从文件中读取出的文章存储的地方
+
+//返回下一个词的类
+class Nextword {
+public:
+    Nextword(wstring _pre, int _number, int _prelen, int _nextlen) :pre(_pre), ArticleNumber(_number), prelen(_prelen), nextlen(_nextlen) {};
+    wstring next();//返回后缀的函数
+private:
+    int ArticleNumber, prelen, nextlen;
+    wstring pre;
+};
+
+wstring Nextword::next()
+{
+    wchar_t change[20];//将前缀转换为一个一个字方便比较
+    wstring returnValue[500];//returnValue是用来存储当前前缀的后缀集合
+    for (int i = 0; i < prelen; i++) {
+        change[i] = pre[i];
+    } 
+    int n = 0, x, y, flag = 0;
+    for (int i = 0; i < ArticleNumber-prelen; i++) {
+        for (int j = i, l = 0; j < i + prelen; j++, l++) {
+            if (change[l] == list[j])
+                flag++;//如果flag与前缀长度一致，说明这个前缀可取其后缀
+        }
+        if (flag == prelen) {
+            wchar_t MidVariable[100];
+            for (int k = 0; k < nextlen; k++) {
+                MidVariable[k] = list[i + k + prelen];
+            }
+            returnValue[n] = MidVariable;
+            returnValue[n][nextlen] = '\0';
+            n++;
+        }
+        flag = 0;
+    }
+    srand((unsigned)time(NULL));
+    x = rand();
+    if (n != 0) {
+        y = x % n;
+        return returnValue[y];
+    }
+    if (n == 0) {
+        wchar_t elseReturn[100];
+        wstring _next;
+        for (int k = 0; k < nextlen; k++) {
+            elseReturn[k] = list[k];
+        }
+        _next = elseReturn;
+        return _next;
+    }
+}
+
+
+int main()
+{
+    FILE* in;//in为文件指针指向article文件
+    int len = 0, num = 0 ;
+    wchar_t* book;
+    setlocale(LC_ALL, "chs");
+    cout << "//请将语料库article.txt以UTF-16LE或其他的中文格式存到C盘中" << endl;
+    in = fopen("C:\\article.txt", "r");//请使用UTF-16LE格式存储语料库
+    fseek(in, 0, SEEK_END);
+    len = ftell(in);
+    fseek(in, 0, SEEK_SET);
+    book = (wchar_t*)malloc(sizeof(wchar_t) * len * 2);
+    fread(book, sizeof(wchar_t), len * 2, in);
+    for (int i = 0; i < len; num++, i++)
+    {
+        list[num] = book[i];
+    }
+    list[num] = '\0';
+    fclose(in);
+    int prelen, nextlen;
+    wstring pre;
+    cout << "请输入前缀长度：" << endl;
+    cin >> prelen;
+    cout << "请输入后缀长度：" << endl;
+    cin >> nextlen;
+    cout << "请输入启动词(与前缀长度一致)：" << endl;
+    wcin >> pre;
+    wcout <<L"    " << pre;
+    wstring New;
+    for (int i = 1; i < 20000; i++) {
+        Nextword word(pre, num - 1, prelen, nextlen);
+        wstring next, nextword;
+        next = word.next();
+        nextword = next.substr(0, nextlen);
+        wcout << nextword;//打印next
+        fflush(stdout);
+        New = pre + nextword;//将前后缀重新组合
+        pre = New.substr(nextlen, prelen);//从组合中取最后的内容作为新的前缀
+        Sleep(10 + nextlen * 30);
+    }
+    return 0;
+}
